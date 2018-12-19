@@ -1,20 +1,25 @@
 import React, { Component } from 'react';
 import './App.css';
 
-import { withScriptjs, withGoogleMap, GoogleMap, Marker, Circle } from "react-google-maps"
 import io from 'socket.io-client'
+import GoogleMapReact from 'google-map-react'
 
-const MyMapComponent = withScriptjs(withGoogleMap((props) =>
-  <GoogleMap
-    defaultZoom={8}
-    defaultCenter={{ lat: -34.397, lng: 150.644 }}
-  >
-    <Marker
-      position={{ lat: -34.397, lng: 150.644 }}
-    />
-  </GoogleMap>
-))
-
+const AnyReactComponent = () => (
+  <React.Fragment>
+   <span style={{
+     height: '55px',
+     width: '55px',
+     backgroundColor: '#2ECC40',
+     borderRadius: '50%',
+     display: 'inline-block'
+   }}/>
+    <p style={{
+      color: 'white',
+      fontSize: '15px',
+      fontWeight: '400'
+    }}>asdsadwas§</p>
+  </React.Fragment>
+)
 
 class App extends Component {
 
@@ -22,8 +27,14 @@ class App extends Component {
     super(props)
     this.state = {
       mentions: [
-        {lat: 12, long: 12312, receivedAt: new Date()}
-      ]
+        {lat: 51.507351, long: -0.127758, receivedAt: new Date()}
+      ],
+      center: {
+        lat: 59.95,
+        lng: 30.33
+      },
+      zoom: 1,
+      concurrentMentions: 10
     }
   }
 
@@ -31,23 +42,43 @@ class App extends Component {
     const socket = io('http://localhost:5000')
     socket.on('tweet', msg => {
       // do stuff
-      console.log(msg)
+      const { lat, long } = msg
+      this.handleNewLat(lat, long)
     })
+  }
+
+  handleNewLat(lat, long) {
+    const newMention = {lat, long, receivedAt: new Date()}
+    const mentions = this.state.mentions
+    if(mentions.length > this.state.concurrentMentions - 1) {
+      mentions.splice(0, 1)
+    }
+    mentions.push(newMention)
+    this.setState({ mentions })
   }
 
   render() {
     return (
-      <div>
-          <MyMapComponent
-            isMarkerShown
-            googleMapURL="https://maps.googleapis.com/maps/api/js?v=3.exp&libraries=geometry,drawing,places&key=AIzaSyDSXbAvHCip_VCyGnnWrsBq4Zy_uuqMIos"
-            loadingElement={<div style={{ height: '100%' }} />}
-            containerElement={<div style={{ height: '700px' }} />}
-            mapElement={<div style={{ height: '100%' }} />}
-          />
-      </div>
+      <React.Fragment>
+
+        <div style={{ height: '800px', width: '100%' }}>
+          <GoogleMapReact
+            bootstrapURLKeys={{ key: 'AIzaSyDSXbAvHCip_VCyGnnWrsBq4Zy_uuqMIos' }}
+            defaultCenter={this.state.center}
+            defaultZoom={this.state.zoom}
+          >
+            {this.state.mentions.map(mention => (
+              <AnyReactComponent
+                lat={mention.lat}
+                lng={mention.long}
+                text="Tweet!!!"
+              />
+            ))}
+          </GoogleMapReact>
+        </div>
+      </React.Fragment>
     )
   }
-};
+}
 
-export default App;
+export default App
